@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Gate Lab</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root{
+  --bg:#0A0D1A;
+  --panel:#12172B;
+  --panel-alt:#1A2038;
+  --border:#2A3152;
+  --text:#E9E7F5;
+  --text-dim:#8A8FB0;
+  --cyan:#5EEAD4;
+  --violet:#A78BFA;
+  --rose:#F472B6;
+  --gold:#E8B04B;
+  --red:#FB7185;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(94,234,212,0.07), transparent),
+    radial-gradient(ellipse 700px 500px at 100% 10%, rgba(167,139,250,0.08), transparent),
+    var(--bg);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+}
+.app{max-width:1320px;margin:0 auto;padding:28px 20px 60px;}
+
+header{margin-bottom:22px;}
+.eyebrow{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:8px;
+}
+h1{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:34px;font-weight:700;margin:0 0 6px;
+  letter-spacing:-0.01em;
+}
+.tagline{color:var(--text-dim);font-size:15px;max-width:640px;line-height:1.5;margin:0;}
+
+.layout{
+  display:grid;
+  grid-template-columns:236px 1fr 300px;
+  gap:18px;
+  margin-top:24px;
+  align-items:start;
+}
+@media (max-width:980px){
+  .layout{grid-template-columns:1fr;}
+}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+}
+.panel h2{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:13px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-dim);margin:0 0 12px;
+  display:flex;align-items:center;gap:8px;
+}
+.panel h2::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* palette */
+.gate-group{margin-bottom:16px;}
+.gate-group-label{
+  font-size:11px;color:var(--text-dim);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:8px;font-family:'JetBrains Mono',monospace;
+}
+.gate-btn{
+  width:100%;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel-alt);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  padding:9px 12px;
+  border-radius:8px;
+  margin-bottom:6px;
+  cursor:pointer;
+  transition:border-color .15s, background .15s, transform .1s;
+}
+.gate-btn:hover{border-color:var(--cyan);}
+.gate-btn:active{transform:scale(0.98);}
+.gate-btn.active{
+  background:rgba(94,234,212,0.12);
+  border-color:var(--cyan);
+  box-shadow:0 0 0 1px var(--cyan) inset;
+}
+.gate-btn:disabled{opacity:.35;cursor:not-allowed;}
+.gate-btn .gname{color:var(--text-dim);font-family:'Inter',sans-serif;font-size:11px;}
+.angle-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.angle-row input{
+  width:56px;background:var(--panel-alt);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:6px;font-family:'JetBrains Mono',monospace;font-size:12px;
+}
+.angle-row .gate-btn{margin-bottom:0;flex:1;}
+
+/* circuit panel */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;}
+.qubit-toggle{display:flex;gap:6px;background:var(--panel-alt);padding:4px;border-radius:9px;border:1px solid var(--border);}
+.qubit-toggle button{
+  background:transparent;border:none;color:var(--text-dim);
+  font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px;border-radius:6px;cursor:pointer;
+}
+.qubit-toggle button.active{background:var(--cyan);color:#06231F;font-weight:600;}
+.btn{
+  background:var(--panel-alt);border:1px solid var(--border);color:var(--text);
+  font-family:'Inter',sans-serif;font-size:12.5px;padding:7px 12px;border-radius:8px;cursor:pointer;
+}
+.btn:hover{border-color:var(--violet);}
+.btn.ghost{color:var(--text-dim);}
+.btn.small{padding:5px 9px;font-size:12px;}
+.spacer{flex:1;}
+
+.instruction{
+  font-family:'JetBrains Mono',monospace;font-size:12.5px;
+  color:var(--gold); background:rgba(232,176,75,0.08);
+  border:1px solid rgba(232,176,75,0.3);
+  padding:9px 12px;border-radius:8px;margin-bottom:12px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+}
+.instruction.warn{color:var(--red);background:rgba(251,113,133,0.1);border-color:rgba(251,113,133,.4);}
+.instruction button{background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;}
+
+.circuit-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--panel-alt);padding:6px;}
+.circuit-wrap svg{display:block;}
+.wire{stroke:#3B4368;stroke-width:2;}
+.qlabel{font-family:'JetBrains Mono',monospace;font-size:12px;fill:var(--text-dim);}
+.tlabel{font-family:'JetBrains Mono',monospace;font-size:10px;fill:#565E85;text-anchor:middle;}
+.gatebox{fill:var(--panel);stroke:var(--cyan);stroke-width:1.5;}
+.gate-Y.gatebox{stroke:var(--violet);}
+.gate-Z.gatebox{stroke:var(--rose);}
+.gate-H.gatebox{stroke:var(--gold);}
+.gate-RX.gatebox,.gate-RY.gatebox,.gate-RZ.gatebox{stroke:var(--violet);}
+.gatelabel{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;fill:var(--text);text-anchor:middle;}
+.anglelabel{font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--text-dim);text-anchor:middle;}
+.connector{stroke:#4A5386;stroke-width:2;}
+.dot{fill:var(--cyan);}
+.target-ring{fill:none;stroke:var(--cyan);stroke-width:1.5;}
+.target-cross{stroke:var(--cyan);stroke-width:1.5;}
+.swapx{stroke:var(--rose);stroke-width:2.2;}
+.cell{cursor:pointer;}
+.cell:hover{fill:rgba(255,255,255,0.03);}
+
+.step-row{display:flex;align-items:center;gap:12px;margin-top:14px;}
+.step-row input[type=range]{flex:1;accent-color:var(--cyan);}
+.step-row span{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);white-space:nowrap;}
+
+/* state panel */
+.bloch-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;}
+.bloch-card{flex:1;min-width:100px;background:var(--panel-alt);border:1px solid var(--border);border-radius:10px;padding:8px;text-align:center;}
+.bloch-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:4px;display:flex;justify-content:center;gap:6px;}
+.purity{color:#565E85;}
+.bloch-svg{width:100%;height:auto;}
+.sphere-outline{fill:none;stroke:#3B4368;stroke-width:1.2;}
+.equator{fill:none;stroke:#2E3557;stroke-width:1;stroke-dasharray:2 3;}
+.axis{stroke:#2E3557;stroke-width:1;}
+.axislabel{font-family:'JetBrains Mono',monospace;font-size:9px;fill:#565E85;text-anchor:middle;}
+.bloch-vector{stroke-width:2;}
+
+.amp-row{display:grid;grid-template-columns:44px 1fr 44px 80px;align-items:center;gap:8px;margin-bottom:6px;}
+.amp-ket{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);}
+.amp-bar-track{height:8px;background:#1E2340;border-radius:4px;overflow:hidden;}
+.amp-bar-fill{height:100%;border-radius:4px;transition:width .3s;}
+.amp-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);text-align:right;}
+.amp-complex{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6D75A6;text-align:right;}
+#ampList{max-height:420px;overflow-y:auto;padding-right:4px;}
+
+.ref-toggle-wrap{margin-top:16px;}
+.ref-panel{
+  margin-top:16px;background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:18px;display:none;
+}
+.ref-panel.open{display:block;}
+.ref-panel h2{font-family:'Space Grotesk',sans-serif;font-size:16px;margin:0 0 14px;color:var(--text);}
+.ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.ref-card{background:var(--panel-alt);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.ref-card .rname{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;margin-bottom:2px;}
+.ref-card .rdesc{font-size:11.5px;color:var(--text-dim);margin-bottom:8px;line-height:1.4;}
+.ref-card pre{
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--cyan);
+  background:#0D1122;border-radius:6px;padding:8px 10px;margin:0;overflow-x:auto;
+}
+footer{margin-top:28px;color:#4A5178;font-size:11.5px;text-align:center;font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="eyebrow">t0 — |0⟩ — H — •⊕ — measure</div>
+    <h1>Quantum Gate Lab</h1>
+    <p class="tagline">Build a circuit with up to 4 qubits, watch the wavefunction evolve column by column, and see each qubit's Bloch vector live — including how it shrinks toward the center as qubits become entangled.</p>
+  </header>
+
+  <div class="layout">
+    <!-- PALETTE -->
+    <div class="panel">
+      <h2>Gates</h2>
+
+      <div class="gate-group">
+        <div class="gate-group-label">Pauli &amp; Hadamard</div>
+        <button class="gate-btn" id="btn-X" onclick="armGate('X',1)" title="Flips |0⟩ and |1⟩ — the quantum version of NOT.">X <span class="gname">bit-flip</span></button>
+        <button class="gate-btn" id="btn-Y" onclick="armGate('Y',1)" title="Flips the bit and the phase together (a 180° turn around the Y axis).">Y <span class="gname">bit+phase</span></button>
+        <button class="gate-btn" id="btn-Z" onclick="armGate('Z',1)" title="Leaves |0⟩ alone, flips the sign of |1⟩.">Z <span class="gname">phase-flip</span></button>
+        <button class="gate-btn" id="btn-H" onclick="armGate('H',1)" title="Turns a definite |0⟩ or |1⟩ into an equal mix of both — the gate that makes superposition.">H <span class="gname">superpose</span></button>
+      </div>
+
+      <div class="gate-group">
+        <div class="gate-group-label">Phase</div>
+        <button class="gate-btn" id="btn-S" onclick="armGate('S',1)" title="Rotates the |1⟩ phase by 90°, a quarter-turn.">S <span class="gname">90°</span></button>
+        <button class="gate-btn" id="btn-Sdg" onclick="armGate('Sdg',1)" title="The reverse of S — rotates |1⟩ phase by -90°.">S† <span class="gname">-90°</span></button>
+        <button class="gate-btn" id="btn-T" onclick="armGate('T',1)" title="Rotates the |1⟩ phase by 45°, a gentler twist than S.">T <span class="gname">45°</span></button>
+        <button class="gate-btn" id="btn-Tdg" onclick="armGate('Tdg',1)" title="The reverse of T — rotates |1⟩ phase by -45°.">T† <span class="gname">-45°</span></button>
+      </div>
+
+      <div class="gate-group">
+        <div class="gate-group-label">Rotation (θ in degrees)</div>
+        <div class="angle-row"><input type="number" id="angRX" value="90"><button class="gate-btn" id="btn-RX" onclick="armRX()" title="Spins the qubit around the X axis of the Bloch sphere by θ.">Rx(θ)</button></div>
+        <div class="angle-row"><input type="number" id="angRY" value="90"><button class="gate-btn" id="btn-RY" onclick="armRY()" title="Spins the qubit around the Y axis of the Bloch sphere by θ.">Ry(θ)</button></div>
+        <div class="angle-row"><input type="number" id="angRZ" value="90"><button class="gate-btn" id="btn-RZ" onclick="armRZ()" title="Spins the qubit around the Z axis of the Bloch sphere by θ.">Rz(θ)</button></div>
+      </div>
+
+      <div class="gate-group">
+        <div class="gate-group-label">Multi-Qubit</div>
+        <button class="gate-btn" id="btn-CNOT" onclick="armGate('CNOT',2)" title="Flips the target qubit only if the control qubit is |1⟩ — the standard way to create entanglement.">CNOT <span class="gname">entangle</span></button>
+        <button class="gate-btn" id="btn-CZ" onclick="armGate('CZ',2)" title="Flips the sign only when both qubits are |1⟩ — same effect as CNOT, different basis.">CZ <span class="gname">phase-kick</span></button>
+        <button class="gate-btn" id="btn-SWAP" onclick="armGate('SWAP',2)" title="Trades the states of two qubits with each other.">SWAP <span class="gname">exchange</span></button>
+        <button class="gate-btn" id="btn-TOFFOLI" onclick="armGate('TOFFOLI',3)" title="Flips the target only if both control qubits are |1⟩ — a doubly-conditional NOT, needs 3+ qubits.">Toffoli <span class="gname">CCNOT</span></button>
+      </div>
+
+      <div class="ref-toggle-wrap">
+        <button class="btn ghost" style="width:100%" onclick="toggleRef()">ℹ Gate reference</button>
+      </div>
+    </div>
+
+    <!-- CIRCUIT -->
+    <div class="panel">
+      <h2>Circuit</h2>
+      <div class="toolbar">
+        <div class="qubit-toggle">
+          <button data-n="1" onclick="setQubits(1)">1 qubit</button>
+          <button data-n="2" onclick="setQubits(2)">2 qubits</button>
+          <button data-n="3" onclick="setQubits(3)">3 qubits</button>
+          <button data-n="4" onclick="setQubits(4)">4 qubits</button>
+        </div>
+        <button class="btn small" onclick="addColumn()">+ column</button>
+        <button class="btn small" onclick="removeColumn()">− column</button>
+        <div class="spacer"></div>
+        <button class="btn small" onclick="presetBell()">Bell pair</button>
+        <button class="btn small" onclick="presetGHZ()">GHZ (3q)</button>
+        <button class="btn small" onclick="presetSuperposition()">All-H</button>
+        <button class="btn small ghost" onclick="presetClear()">Clear</button>
+      </div>
+
+      <div class="instruction" id="instruction">Tap a gate, then tap the circuit to place it.
+        <button onclick="cancelPending()">cancel</button>
+      </div>
+
+      <div class="circuit-wrap" id="circuitWrap"></div>
+
+      <div class="step-row">
+        <span>t=0</span>
+        <input type="range" id="stepRange" min="0" max="6" value="6" oninput="onStep(this.value)">
+        <span id="stepLabel">t = 6 / 6</span>
+      </div>
+    </div>
+
+    <!-- STATE -->
+    <div class="panel">
+      <h2>Bloch vectors</h2>
+      <div class="bloch-row" id="blochRow"></div>
+      <h2>Amplitudes</h2>
+      <div id="ampList"></div>
+    </div>
+  </div>
+
+  <div class="ref-panel" id="refPanel">
+    <h2>Gate reference — matrices</h2>
+    <div class="ref-grid">
+      <div class="ref-card"><div class="rname">X — Pauli-X</div><div class="rdesc">Bit-flip. |0⟩↔|1⟩.</div><pre>[ 0  1 ]
+[ 1  0 ]</pre></div>
+      <div class="ref-card"><div class="rname">Y — Pauli-Y</div><div class="rdesc">Bit-flip + phase-flip.</div><pre>[ 0  -i ]
+[ i   0 ]</pre></div>
+      <div class="ref-card"><div class="rname">Z — Pauli-Z</div><div class="rdesc">Flips phase of |1⟩.</div><pre>[ 1   0 ]
+[ 0  -1 ]</pre></div>
+      <div class="ref-card"><div class="rname">H — Hadamard</div><div class="rdesc">Creates equal superposition.</div><pre>1/√2 [ 1   1 ]
+     [ 1  -1 ]</pre></div>
+      <div class="ref-card"><div class="rname">S — Phase</div><div class="rdesc">90° phase on |1⟩. S† is its conjugate.</div><pre>[ 1   0 ]
+[ 0   i ]</pre></div>
+      <div class="ref-card"><div class="rname">T — π/8 gate</div><div class="rdesc">45° phase on |1⟩. T† is its conjugate.</div><pre>[ 1        0     ]
+[ 0   e^(iπ/4) ]</pre></div>
+      <div class="ref-card"><div class="rname">Rx(θ)</div><div class="rdesc">Rotate around the X axis of the Bloch sphere.</div><pre>[  cos(θ/2)   -i·sin(θ/2) ]
+[ -i·sin(θ/2)  cos(θ/2)  ]</pre></div>
+      <div class="ref-card"><div class="rname">Ry(θ)</div><div class="rdesc">Rotate around the Y axis of the Bloch sphere.</div><pre>[ cos(θ/2)  -sin(θ/2) ]
+[ sin(θ/2)   cos(θ/2) ]</pre></div>
+      <div class="ref-card"><div class="rname">Rz(θ)</div><div class="rdesc">Rotate around the Z axis of the Bloch sphere.</div><pre>[ e^(-iθ/2)     0      ]
+[    0       e^(iθ/2)  ]</pre></div>
+      <div class="ref-card"><div class="rname">CNOT</div><div class="rdesc">Flips target if control is |1⟩. Creates entanglement.</div><pre>[ 1 0 0 0 ]
+[ 0 1 0 0 ]
+[ 0 0 0 1 ]
+[ 0 0 1 0 ]</pre></div>
+      <div class="ref-card"><div class="rname">CZ</div><div class="rdesc">Applies -1 phase only to |11⟩.</div><pre>[ 1 0 0  0 ]
+[ 0 1 0  0 ]
+[ 0 0 1  0 ]
+[ 0 0 0 -1 ]</pre></div>
+      <div class="ref-card"><div class="rname">SWAP</div><div class="rdesc">Exchanges the state of two qubits.</div><pre>[ 1 0 0 0 ]
+[ 0 0 1 0 ]
+[ 0 1 0 0 ]
+[ 0 0 0 1 ]</pre></div>
+      <div class="ref-card"><div class="rname">Toffoli (CCNOT)</div><div class="rdesc">Flips target only if both controls are |1⟩. Universal for reversible classical logic.</div><pre>8×8 identity, except the
+bottom-right 2×2 block is
+the X gate (swaps |110⟩,|111⟩)</pre></div>
+    </div>
+  </div>
+
+  <footer>All computation runs client-side — full complex state-vector simulation, up to 4 qubits (16 basis states).</footer>
+</div>
+
+<script>
+/* ---------- complex helpers ---------- */
+function cplx(re,im){ return {re:re, im:im}; }
+function cAdd(a,b){ return {re:a.re+b.re, im:a.im+b.im}; }
+function cMul(a,b){ return {re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re}; }
+function cScale(a,s){ return {re:a.re*s, im:a.im*s}; }
+function cConj(a){ return {re:a.re, im:-a.im}; }
+
+function fmtComplex(c){
+  const re = Math.abs(c.re)<0.005 ? 0 : c.re;
+  const im = Math.abs(c.im)<0.005 ? 0 : c.im;
+  if(im===0) return re.toFixed(2);
+  const sign = im<0 ? '-' : '+';
+  return re.toFixed(2)+' '+sign+' '+Math.abs(im).toFixed(2)+'i';
+}
+
+/* ---------- gate matrices ---------- */
+function gateMatrix(type, angleDeg){
+  const t = (angleDeg||0)*Math.PI/180;
+  const c = Math.cos(t/2), s = Math.sin(t/2);
+  const k = 1/Math.SQRT2;
+  switch(type){
+    case 'X': return [[cplx(0,0),cplx(1,0)],[cplx(1,0),cplx(0,0)]];
+    case 'Y': return [[cplx(0,0),cplx(0,-1)],[cplx(0,1),cplx(0,0)]];
+    case 'Z': return [[cplx(1,0),cplx(0,0)],[cplx(0,0),cplx(-1,0)]];
+    case 'H': return [[cplx(k,0),cplx(k,0)],[cplx(k,0),cplx(-k,0)]];
+    case 'S': return [[cplx(1,0),cplx(0,0)],[cplx(0,0),cplx(0,1)]];
+    case 'Sdg': return [[cplx(1,0),cplx(0,0)],[cplx(0,0),cplx(0,-1)]];
+    case 'T': return [[cplx(1,0),cplx(0,0)],[cplx(0,0),cplx(Math.cos(Math.PI/4),Math.sin(Math.PI/4))]];
+    case 'Tdg': return [[cplx(1,0),cplx(0,0)],[cplx(0,0),cplx(Math.cos(Math.PI/4),-Math.sin(Math.PI/4))]];
+    case 'RX': return [[cplx(c,0),cplx(0,-s)],[cplx(0,-s),cplx(c,0)]];
+    case 'RY': return [[cplx(c,0),cplx(-s,0)],[cplx(s,0),cplx(c,0)]];
+    case 'RZ': return [[cplx(Math.cos(t/2),-Math.sin(t/2)),cplx(0,0)],[cplx(0,0),cplx(Math.cos(t/2),Math.sin(t/2))]];
+    default: return [[cplx(1,0),cplx(0,0)],[cplx(0,0),cplx(1,0)]];
+  }
+}
+
+const SYMBOL = {X:'X',Y:'Y',Z:'Z',H:'H',S:'S',Sdg:'S†',T:'T',Tdg:'T†',RX:'Rx',RY:'Ry',RZ:'Rz'};
+const SYMBOL_NAME = {X:'Pauli-X',Y:'Pauli-Y',Z:'Pauli-Z',H:'Hadamard',S:'S',Sdg:'S†',T:'T',Tdg:'T†',RX:'Rx rotation',RY:'Ry rotation',RZ:'Rz rotation'};
+
+/* ---------- bit helpers ---------- */
+function getBit(i,q,n){ return (i>>(n-1-q))&1; }
+
+/* ---------- apply a single operation to an amplitude array ---------- */
+function applyOp(amp, n, op){
+  const dim = amp.length;
+  const SINGLE = ['X','Y','Z','H','S','Sdg','T','Tdg','RX','RY','RZ'];
+  if(SINGLE.includes(op.type)){
+    const U = gateMatrix(op.type, op.angle);
+    const q = op.qubits[0];
+    const out = amp.slice();
+    const mask = 1<<(n-1-q);
+    for(let i=0;i<dim;i++){
+      if(getBit(i,q,n)===0){
+        const i1 = i|mask;
+        const a0 = amp[i], a1 = amp[i1];
+        out[i]  = cAdd(cMul(U[0][0],a0), cMul(U[0][1],a1));
+        out[i1] = cAdd(cMul(U[1][0],a0), cMul(U[1][1],a1));
+      }
+    }
+    return out;
+  }
+  if(op.type==='CNOT'){
+    const [ctrl,tgt] = op.qubits;
+    const out = amp.slice();
+    const maskT = 1<<(n-1-tgt);
+    for(let i=0;i<dim;i++){
+      if(getBit(i,ctrl,n)===1 && getBit(i,tgt,n)===0){
+        const j = i|maskT;
+        out[i]=amp[j]; out[j]=amp[i];
+      }
+    }
+    return out;
+  }
+  if(op.type==='CZ'){
+    const [ctrl,tgt] = op.qubits;
+    const out = amp.slice();
+    for(let i=0;i<dim;i++){
+      if(getBit(i,ctrl,n)===1 && getBit(i,tgt,n)===1) out[i] = cScale(amp[i],-1);
+    }
+    return out;
+  }
+  if(op.type==='SWAP'){
+    const [a,b] = op.qubits;
+    const out = amp.slice();
+    const maskA = 1<<(n-1-a), maskB = 1<<(n-1-b);
+    for(let i=0;i<dim;i++){
+      if(getBit(i,a,n)===1 && getBit(i,b,n)===0){
+        const j = (i & ~maskA) | maskB;
+        out[i]=amp[j]; out[j]=amp[i];
+      }
+    }
+    return out;
+  }
+  if(op.type==='TOFFOLI'){
+    const [c1,c2,tgt] = op.qubits;
+    const out = amp.slice();
+    const maskT = 1<<(n-1-tgt);
+    for(let i=0;i<dim;i++){
+      if(getBit(i,c1,n)===1 && getBit(i,c2,n)===1 && getBit(i,tgt,n)===0){
+        const j = i|maskT;
+        out[i]=amp[j]; out[j]=amp[i];
+      }
+    }
+    return out;
+  }
+  return amp;
+}
+function applyColumnOps(amp,n,ops){
+  let cur = amp;
+  for(const op of ops) cur = applyOp(cur,n,op);
+  return cur;
+}
+
+/* ---------- reduced Bloch vector via partial trace ---------- */
+function reducedBloch(amp,n,q){
+  const dim = amp.length;
+  const mask = 1<<(n-1-q);
+  let rho00=0, rho11=0, rho01=cplx(0,0);
+  for(let i=0;i<dim;i++){
+    if(getBit(i,q,n)===0){
+      const i1 = i|mask;
+      const a0=amp[i], a1=amp[i1];
+      rho00 += a0.re*a0.re + a0.im*a0.im;
+      rho11 += a1.re*a1.re + a1.im*a1.im;
+      rho01 = cAdd(rho01, cMul(a0, cConj(a1)));
+    }
+  }
+  return { x: 2*rho01.re, y: -2*rho01.im, z: rho00-rho11 };
+}
+function projectBloch(x,y,z,rotAngle){
+  const x2 = x*Math.cos(rotAngle) - z*Math.sin(rotAngle);
+  const z2 = x*Math.sin(rotAngle) + z*Math.cos(rotAngle);
+  const cx=70, cy=70, R=48;
+  return { sx: cx + R*x2, sy: cy - R*(y*0.82 + z2*0.30) };
+}
+
+/* ---------- app state ---------- */
+function makeEmptyColumns(n){ return Array.from({length:n}, ()=>({ops:[]})); }
+const state = {
+  numQubits: 2,
+  circuit: makeEmptyColumns(6),
+  pending: null,
+  step: 6,
+  history: [],
+  blochTargets: []
+};
+let rot = 0;
+
+/* ---------- simulation ---------- */
+function recompute(){
+  const n = state.numQubits, dim = 1<<n;
+  let amp = new Array(dim).fill(0).map(()=>cplx(0,0));
+  amp[0] = cplx(1,0);
+  const history = [amp];
+  for(const col of state.circuit){
+    amp = applyColumnOps(amp, n, col.ops);
+    history.push(amp);
+  }
+  state.history = history;
+}
+function afterCircuitChange(){
+  recompute();
+  state.step = state.circuit.length;
+  render();
+}
+
+/* ---------- interaction ---------- */
+function armGate(type, needed, angle){
+  if(state.pending && state.pending.type===type){
+    state.pending = null; highlightArmed(null); updateInstruction(); return;
+  }
+  if(type==='TOFFOLI' && state.numQubits<3) return;
+  state.pending = {type, needed, qubits:[], angle: angle||0, column:null};
+  highlightArmed(type);
+  updateInstruction();
+}
+function armRX(){ armGate('RX',1, parseFloat(document.getElementById('angRX').value)||0); }
+function armRY(){ armGate('RY',1, parseFloat(document.getElementById('angRY').value)||0); }
+function armRZ(){ armGate('RZ',1, parseFloat(document.getElementById('angRZ').value)||0); }
+function cancelPending(){ state.pending=null; highlightArmed(null); updateInstruction(); }
+function highlightArmed(type){
+  document.querySelectorAll('.gate-btn').forEach(b=>b.classList.remove('active'));
+  if(type){ const el=document.getElementById('btn-'+type); if(el) el.classList.add('active'); }
+}
+function findOpAt(column,row){ return column.ops.findIndex(op=>op.qubits.includes(row)); }
+function buildOp(p){
+  if(p.needed===1) return {type:p.type, qubits:[p.qubits[0]], angle:p.angle};
+  if(p.type==='TOFFOLI') return {type:'TOFFOLI', qubits:[p.qubits[0],p.qubits[1],p.qubits[2]]};
+  return {type:p.type, qubits:[p.qubits[0],p.qubits[1]]};
+}
+function handleCellClick(col,row){
+  const column = state.circuit[col];
+  const idx = findOpAt(column,row);
+  if(idx!==-1){
+    column.ops.splice(idx,1);
+    afterCircuitChange();
+    return;
+  }
+  const p = state.pending;
+  if(!p) return;
+  if(p.qubits.length===0){
+    p.column = col;
+  } else {
+    if(col !== p.column){ flashInstruction('Stay in the same time column.'); return; }
+    if(p.qubits.includes(row)) return;
+  }
+  p.qubits.push(row);
+  if(p.qubits.length === p.needed){
+    state.circuit[p.column].ops.push(buildOp(p));
+    state.pending = null;
+    highlightArmed(null);
+    afterCircuitChange();
+    return;
+  }
+  updateInstruction();
+}
+function flashInstruction(msg){
+  const el = document.getElementById('instruction');
+  el.firstChild.textContent = msg;
+  el.classList.add('warn');
+  setTimeout(()=>{ el.classList.remove('warn'); updateInstruction(); }, 1100);
+}
+function updateInstruction(){
+  const el = document.getElementById('instruction');
+  const p = state.pending;
+  let text;
+  if(!p){ text = 'Tap a gate, then tap the circuit to place it. Tap a placed gate to remove it.'; }
+  else if(p.needed===1){ text = 'Tap an empty cell to place '+SYMBOL_NAME[p.type]+'.'; }
+  else if(p.type==='TOFFOLI'){ text = ['Tap the first control qubit.','Tap the second control qubit.','Tap the target qubit.'][p.qubits.length]; }
+  else if(p.type==='SWAP'){ text = p.qubits.length===0 ? 'Tap the first qubit to swap.' : 'Tap the second qubit to swap.'; }
+  else { text = p.qubits.length===0 ? 'Tap the control qubit.' : 'Tap the target qubit (same column).'; }
+  el.firstChild.textContent = text;
+}
+
+/* ---------- circuit rendering ---------- */
+function qY(q,topM,rowH){ return topM + q*rowH + rowH/2; }
+function swapX(x,y){
+  return '<line x1="'+(x-9)+'" y1="'+(y-9)+'" x2="'+(x+9)+'" y2="'+(y+9)+'" class="swapx"/>'+
+         '<line x1="'+(x-9)+'" y1="'+(y+9)+'" x2="'+(x+9)+'" y2="'+(y-9)+'" class="swapx"/>';
+}
+function renderOpSVG(op,x,topM,rowH){
+  const SINGLE = ['X','Y','Z','H','S','Sdg','T','Tdg','RX','RY','RZ'];
+  if(SINGLE.includes(op.type)){
+    const y = qY(op.qubits[0],topM,rowH);
+    const extra = op.type.charAt(0)==='R' ? '<text x="'+x+'" y="'+(y+30)+'" class="anglelabel">'+op.angle+'°</text>' : '';
+    return '<g><rect x="'+(x-22)+'" y="'+(y-22)+'" width="44" height="44" rx="10" class="gatebox gate-'+op.type+'"/>'+
+           '<text x="'+x+'" y="'+(y+6)+'" class="gatelabel">'+SYMBOL[op.type]+'</text>'+extra+'</g>';
+  }
+  if(op.type==='CNOT'){
+    const [c,t]=op.qubits, yc=qY(c,topM,rowH), yt=qY(t,topM,rowH);
+    return '<g><line x1="'+x+'" y1="'+yc+'" x2="'+x+'" y2="'+yt+'" class="connector"/>'+
+           '<circle cx="'+x+'" cy="'+yc+'" r="7" class="dot"/>'+
+           '<circle cx="'+x+'" cy="'+yt+'" r="16" class="target-ring"/>'+
+           '<line x1="'+(x-16)+'" y1="'+yt+'" x2="'+(x+16)+'" y2="'+yt+'" class="target-cross"/>'+
+           '<line x1="'+x+'" y1="'+(yt-16)+'" x2="'+x+'" y2="'+(yt+16)+'" class="target-cross"/></g>';
+  }
+  if(op.type==='CZ'){
+    const [c,t]=op.qubits, yc=qY(c,topM,rowH), yt=qY(t,topM,rowH);
+    return '<g><line x1="'+x+'" y1="'+yc+'" x2="'+x+'" y2="'+yt+'" class="connector"/>'+
+           '<circle cx="'+x+'" cy="'+yc+'" r="7" class="dot"/>'+
+           '<circle cx="'+x+'" cy="'+yt+'" r="7" class="dot"/></g>';
+  }
+  if(op.type==='SWAP'){
+    const [a,b]=op.qubits, ya=qY(a,topM,rowH), yb=qY(b,topM,rowH);
+    return '<g><line x1="'+x+'" y1="'+ya+'" x2="'+x+'" y2="'+yb+'" class="connector"/>'+swapX(x,ya)+swapX(x,yb)+'</g>';
+  }
+  if(op.type==='TOFFOLI'){
+    const [c1,c2,t]=op.qubits;
+    const ys=[qY(c1,topM,rowH),qY(c2,topM,rowH),qY(t,topM,rowH)];
+    const ymin=Math.min.apply(null,ys), ymax=Math.max.apply(null,ys), yt=qY(t,topM,rowH);
+    return '<g><line x1="'+x+'" y1="'+ymin+'" x2="'+x+'" y2="'+ymax+'" class="connector"/>'+
+           '<circle cx="'+x+'" cy="'+qY(c1,topM,rowH)+'" r="7" class="dot"/>'+
+           '<circle cx="'+x+'" cy="'+qY(c2,topM,rowH)+'" r="7" class="dot"/>'+
+           '<circle cx="'+x+'" cy="'+yt+'" r="16" class="target-ring"/>'+
+           '<line x1="'+(x-16)+'" y1="'+yt+'" x2="'+(x+16)+'" y2="'+yt+'" class="target-cross"/>'+
+           '<line x1="'+x+'" y1="'+(yt-16)+'" x2="'+x+'" y2="'+(yt+16)+'" class="target-cross"/></g>';
+  }
+  return '';
+}
+function renderCircuit(){
+  const n = state.numQubits, cols = state.circuit.length;
+  const colW=88, rowH=64, leftM=46, topM=24;
+  const width = leftM + cols*colW + 20;
+  const height = topM + n*rowH + 16;
+  let svg = '<svg viewBox="0 0 '+width+' '+height+'" width="'+width+'" height="'+height+'">';
+  for(let q=0;q<n;q++){
+    const y = qY(q,topM,rowH);
+    svg += '<text x="4" y="'+(y+4)+'" class="qlabel">q'+q+'</text>';
+    svg += '<line x1="'+leftM+'" y1="'+y+'" x2="'+(leftM+cols*colW)+'" y2="'+y+'" class="wire"/>';
+  }
+  for(let c=0;c<cols;c++){
+    const x = leftM + c*colW + colW/2;
+    svg += '<text x="'+x+'" y="14" class="tlabel">t'+c+'</text>';
+  }
+  for(let c=0;c<cols;c++){
+    const x = leftM + c*colW + colW/2;
+    for(const op of state.circuit[c].ops) svg += renderOpSVG(op, x, topM, rowH);
+  }
+  for(let c=0;c<cols;c++){
+    for(let q=0;q<n;q++){
+      const x = leftM + c*colW, y = topM + q*rowH;
+      svg += '<rect x="'+x+'" y="'+y+'" width="'+colW+'" height="'+rowH+'" fill="transparent" class="cell" onclick="handleCellClick('+c+','+q+')"/>';
+    }
+  }
+  svg += '</svg>';
+  document.getElementById('circuitWrap').innerHTML = svg;
+}
+
+/* ---------- state panel rendering ---------- */
+function blochSphereSVG(q,v){
+  const colors = ['#5EEAD4','#A78BFA','#F472B6'];
+  const col = colors[q%3];
+  const {sx,sy} = projectBloch(v.x,v.y,v.z,rot);
+  const purity = Math.sqrt(v.x*v.x+v.y*v.y+v.z*v.z);
+  return '<div class="bloch-card"><div class="bloch-label">q'+q+' <span class="purity">'+(purity<0.95?'mixed':'pure')+'</span></div>'+
+    '<svg viewBox="0 0 140 140" class="bloch-svg">'+
+    '<ellipse cx="70" cy="70" rx="48" ry="15" class="equator"/>'+
+    '<circle cx="70" cy="70" r="48" class="sphere-outline"/>'+
+    '<line x1="70" y1="18" x2="70" y2="122" class="axis"/>'+
+    '<text x="70" y="12" class="axislabel">|0⟩</text>'+
+    '<text x="70" y="134" class="axislabel">|1⟩</text>'+
+    '<line id="bloch-vec-q'+q+'" x1="70" y1="70" x2="'+sx+'" y2="'+sy+'" style="stroke:'+col+'" class="bloch-vector"/>'+
+    '<circle id="bloch-tip-q'+q+'" cx="'+sx+'" cy="'+sy+'" r="5" style="fill:'+col+'" class="bloch-tip"/>'+
+    '</svg></div>';
+}
+function updateStateDisplays(step){
+  const amp = state.history[step];
+  const n = state.numQubits;
+  let ampHtml = '';
+  for(let i=0;i<amp.length;i++){
+    const bits = i.toString(2).padStart(n,'0');
+    const prob = (amp[i].re*amp[i].re + amp[i].im*amp[i].im)*100;
+    const phase = Math.atan2(amp[i].im, amp[i].re)*180/Math.PI;
+    const hue = ((phase%360)+360)%360;
+    ampHtml += '<div class="amp-row"><span class="amp-ket">|'+bits+'⟩</span>'+
+      '<div class="amp-bar-track"><div class="amp-bar-fill" style="width:'+prob.toFixed(1)+'%;background:hsl('+hue.toFixed(0)+',72%,62%)"></div></div>'+
+      '<span class="amp-val">'+prob.toFixed(1)+'%</span>'+
+      '<span class="amp-complex">'+fmtComplex(amp[i])+'</span></div>';
+  }
+  document.getElementById('ampList').innerHTML = ampHtml;
+  state.blochTargets = [];
+  let blochHtml = '';
+  for(let q=0;q<n;q++){
+    const v = reducedBloch(amp,n,q);
+    state.blochTargets.push(v);
+    blochHtml += blochSphereSVG(q,v);
+  }
+  document.getElementById('blochRow').innerHTML = blochHtml;
+}
+function onStep(v){
+  state.step = parseInt(v);
+  updateStateDisplays(state.step);
+  document.getElementById('stepLabel').textContent = 't = '+state.step+' / '+state.circuit.length;
+}
+
+/* ---------- top-level controls ---------- */
+function setQubits(n){
+  state.numQubits = n;
+  state.circuit = makeEmptyColumns(6);
+  state.pending = null;
+  highlightArmed(null);
+  afterCircuitChange();
+}
+function addColumn(){ if(state.circuit.length<8){ state.circuit.push({ops:[]}); afterCircuitChange(); } }
+function removeColumn(){ if(state.circuit.length>1){ state.circuit.pop(); afterCircuitChange(); } }
+function presetBell(){
+  state.numQubits=2; state.circuit=makeEmptyColumns(6);
+  state.circuit[0].ops=[{type:'H',qubits:[0]}];
+  state.circuit[1].ops=[{type:'CNOT',qubits:[0,1]}];
+  state.pending=null; highlightArmed(null); afterCircuitChange();
+}
+function presetGHZ(){
+  state.numQubits=3; state.circuit=makeEmptyColumns(6);
+  state.circuit[0].ops=[{type:'H',qubits:[0]}];
+  state.circuit[1].ops=[{type:'CNOT',qubits:[0,1]}];
+  state.circuit[2].ops=[{type:'CNOT',qubits:[0,2]}];
+  state.pending=null; highlightArmed(null); afterCircuitChange();
+}
+function presetSuperposition(){
+  state.circuit = makeEmptyColumns(6);
+  state.circuit[0].ops = Array.from({length:state.numQubits}, (_,q)=>({type:'H',qubits:[q]}));
+  state.pending=null; highlightArmed(null); afterCircuitChange();
+}
+function presetClear(){
+  state.circuit = makeEmptyColumns(6);
+  state.pending=null; highlightArmed(null); afterCircuitChange();
+}
+function toggleRef(){ document.getElementById('refPanel').classList.toggle('open'); }
+
+/* ---------- render ---------- */
+function render(){
+  renderCircuit();
+  updateStateDisplays(state.step);
+  const slider = document.getElementById('stepRange');
+  slider.max = state.circuit.length;
+  slider.value = state.step;
+  document.getElementById('stepLabel').textContent = 't = '+state.step+' / '+state.circuit.length;
+  updateInstruction();
+  const tof = document.getElementById('btn-TOFFOLI');
+  tof.disabled = state.numQubits<3;
+  document.querySelectorAll('.qubit-toggle button').forEach(b=>{
+    b.classList.toggle('active', parseInt(b.dataset.n)===state.numQubits);
+  });
+}
+
+/* ---------- animation loop (Bloch sphere precession) ---------- */
+function animate(){
+  rot += 0.006;
+  for(let q=0;q<state.numQubits;q++){
+    const v = state.blochTargets[q];
+    if(!v) continue;
+    const {sx,sy} = projectBloch(v.x,v.y,v.z,rot);
+    const line = document.getElementById('bloch-vec-q'+q);
+    const tip = document.getElementById('bloch-tip-q'+q);
+    if(line){ line.setAttribute('x2',sx); line.setAttribute('y2',sy); }
+    if(tip){ tip.setAttribute('cx',sx); tip.setAttribute('cy',sy); }
+  }
+  requestAnimationFrame(animate);
+}
+
+/* ---------- init ---------- */
+recompute();
+render();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>
